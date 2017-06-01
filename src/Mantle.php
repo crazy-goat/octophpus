@@ -7,19 +7,17 @@ use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Psr\Cache\CacheItemPoolInterface;
-use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 
-class Mantle
+class Mantle implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * @var array options
      */
     private $options;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger = null;
 
     /**
      * @var CacheItemPoolInterface
@@ -39,12 +37,7 @@ class Mantle
     {
         $this->options = array_merge($this->defaultOptions(), $options);
         $this->client = new Client($this->options['guzzle']);
-    }
-
-    public function setLogger(?LoggerInterface $logger): Mantle
-    {
-        $this->logger = $logger;
-        return $this;
+        $this->logger = new VoidLogger();
     }
 
     public function setCache(?CacheItemPoolInterface $cachePool) : Mantle
@@ -55,7 +48,7 @@ class Mantle
 
     public function decorate(string $data): string
     {
-        if (preg_match_all('/<esi:include [^>]*src=\\"(?P<src>.+)\\"[^>]*\\/>/i', $data, $matches)) {
+        if (preg_match_all('/<esi:include [^>]*src=\\"(?P<src>.*?)\\"[^>]*\\/>/ims', $data, $matches)) {
 
             $requests = function ($matchesSrc) {
                 foreach ($matchesSrc as $key => $match) {
@@ -67,13 +60,27 @@ class Mantle
                 'concurrency' => $this->options['guzzle']['concurrency']
                     ?? $this->defaultOptions()['guzzle']['concurrency'],
                 'fulfilled' => function (Response $response, int $index) use (&$data, $matches) {
-                    $data = str_replace($matches[$index], $response->getBody()->getContents(), $data);
+
+                    $needle = $matches[0][$index];
+                    $pos = strpos($data, $needle);
+                    if ($pos !== false) {
+                        $data = substr_replace($data, $response->getBody()->getContents(), $pos, strlen($needle));
+                    } else {
+                        $this->logger->error('This should not happen. Could not replace previously found esi tag.');
+                    }
                 },
                 'rejected' => function (\Exception $reason, int $index) use (&$data, $matches) {
+
+                    $this->logger->error(
+                        'Could not fetch ['.$matches['src'][$index].']. Reason: '.$reason->getMessage()
+                    );
+
                     $data = str_replace($matches[$index], '', $data);
                 },
             ]);
             $pool->promise()->wait();
+        } else {
+            $this->logger->info('No esi tags found');
         }
 
         return $data;
