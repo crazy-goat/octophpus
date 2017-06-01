@@ -1,6 +1,6 @@
 # Octophpus
-Asynchronous ESI filter for PHP 7.1+. Its scans string for esi tags 
-and replace with remote content. Its a simple replace for varnish server just for 
+Asynchronous ESI filter for PHP 7.1+. Its scans string for `esi:include` tags 
+and replace with remote content. It's a simple replace for varnish server just for 
 including esi content. The killer feature is that all request are made 
 asynchronous, so it should be **faster than varnish**.
 
@@ -80,6 +80,7 @@ List of features to be add in the near feature. _This list is not ordered._
     * Add default url `protocol` and `domain` to handle relative `src`
     * Add [hxInclude](http://mnot.github.io/hinclude/) option on timeout
     * Add option to pass headers to requests (for example cookies, x-forwared-proto)
+    * Add recurrence ESI requests
 * Deployment and maintenance
     * Prepare roadmap ticket, and remove this stuff
     * Travis - form running tests
