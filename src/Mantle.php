@@ -48,15 +48,9 @@ class Mantle implements LoggerAwareInterface
 
     public function decorate(string $data): string
     {
-        if (preg_match_all('/<esi:include [^>]*src=\\"(?P<src>.*?)\\"[^>]*\\/>/ims', $data, $matches)) {
+        if (preg_match_all('/<esi:include [^>]*\\/>/ims', $data, $matches)) {
 
-            $requests = function ($matchesSrc) {
-                foreach ($matchesSrc as $key => $match) {
-                    yield new Request('GET', $match);
-                }
-            };
-
-            $pool = new Pool($this->client, $requests($matches['src']), [
+            $pool = new Pool($this->client, $this->makeRequests()($matches[0]), [
                 'concurrency' => $this->options['guzzle']['concurrency']
                     ?? $this->defaultOptions()['guzzle']['concurrency'],
                 'fulfilled' => function (Response $response, int $index) use (&$data, $matches) {
@@ -93,6 +87,15 @@ class Mantle implements LoggerAwareInterface
                 'concurrency' => 5
             ]
         ];
+    }
+
+    private function makeRequests() {
+        return function (array $matches) {
+            foreach ($matches as $match) {
+                $esiParser = new EsiParser($match);
+                yield new Request('GET', $esiParser->getSrc());
+            }
+        };
     }
 
     /**
