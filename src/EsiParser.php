@@ -33,7 +33,7 @@ class EsiParser
 
     private function checkTag(array $tags) : array
     {
-        if (!is_array($tags) && !isset($tagw[0])) {
+        if (!is_array($tags) || !isset($tags[0])) {
             throw new EsiTagParseException("No valid html tags found");
         }
 

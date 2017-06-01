@@ -10,6 +10,9 @@
     "psr/http-message": "^1.0",
     "php": "~7.1"
   },
+  "suggest": {
+    "ext-curl": "*"
+  },
   "license": "MIT",
   "authors": [
     {
