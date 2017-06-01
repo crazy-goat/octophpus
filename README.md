@@ -79,6 +79,7 @@ List of features to be add in the near feature. _This list is not ordered._
     * Add timeout option - as global and in esi tag
     * Add default url `protocol` and `domain` to handle relative `src`
     * Add [hxInclude](http://mnot.github.io/hinclude/) option on timeout
+    * Add option to pass headers to requests (for example cookies, x-forwared-proto)
 * Deployment and maintenance
     * Prepare roadmap ticket, and remove this stuff
     * Travis - form running tests
