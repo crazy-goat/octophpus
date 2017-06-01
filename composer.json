@@ -1,6 +1,7 @@
 {
   "name": "crazygoat/octophpus",
   "description": "Asynchronous esi:include filter for PHP 7.1+",
+  "keywords": ["php", "async", "esi", "asynchronous", "culr", "guzzle"],
   "type": "library",
   "require": {
     "guzzlehttp/guzzle": "^6.2",
