@@ -3,16 +3,29 @@
 namespace CrazyGoat\Octophpus;
 
 use CrazyGoat\Octophpus\Exception\EsiTagParseException;
+use CrazyGoat\Octophpus\Validator\EsiAttributeValidator;
 
-class EsiParser
+class EsiRequest
 {
     /**
      * @var string
      */
     private $src;
 
+    /**
+     * @var string
+     */
+    private $esiTag;
+
+    /**
+     * @var float|null
+     */
+    private $timeout = null;
+
+
     public function __construct(string $esiTag)
     {
+        $this->esiTag = $esiTag;
         $this->parse($esiTag);
     }
 
@@ -26,12 +39,16 @@ class EsiParser
             throw new EsiTagParseException("Unable to parse xml: ".$esiTag);
         }
 
-        $parsedTag = $this->checkTag($values);
+        $parsedTag = $this->getTag($values);
+
+        $validator = new EsiAttributeValidator($parsedTag['attributes']);
+        $validator->validate();
 
         $this->src = $parsedTag['attributes']['SRC'];
+        $this->timeout = isset($parsedTag['attributes']['TIMEOUT']) ? (float)$parsedTag['attributes']['TIMEOUT'] : null;
     }
 
-    private function checkTag(array $tags) : array
+    private function getTag(array $tags) : array
     {
         if (!is_array($tags) || !isset($tags[0])) {
             throw new EsiTagParseException("No valid html tags found");
@@ -56,5 +73,24 @@ class EsiParser
     public function getSrc(): string
     {
         return $this->src;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEsiTag(): string
+    {
+        return $this->esiTag;
+    }
+
+    public function requestOptions() : array
+    {
+        $options = [];
+
+        if (!empty($this->timeout)) {
+            $options['connect_timeout'] = $this->timeout;
+        }
+
+        return $options;
     }
 }

@@ -3,8 +3,7 @@
 namespace CrazyGoat\Octophpus;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Pool;
-use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Promise\EachPromise;
 use GuzzleHttp\Psr7\Response;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerAwareInterface;
@@ -36,7 +35,7 @@ class Mantle implements LoggerAwareInterface
     public function __construct(array $options = [])
     {
         $this->options = array_merge($this->defaultOptions(), $options);
-        $this->client = new Client($this->options['guzzle']);
+        $this->client = new Client([]);
         $this->logger = new VoidLogger();
     }
 
@@ -50,12 +49,25 @@ class Mantle implements LoggerAwareInterface
     {
         if (preg_match_all('/<esi:include [^>]*\\/>/ims', $data, $matches)) {
 
-            $pool = new Pool($this->client, $this->makeRequests()($matches[0]), [
-                'concurrency' => $this->options['guzzle']['concurrency']
-                    ?? $this->defaultOptions()['guzzle']['concurrency'],
-                'fulfilled' => function (Response $response, int $index) use (&$data, $matches) {
+            /** @var EsiRequest[] $esiRequests */
+            $esiRequests = $this->makeEsiRequests($matches[0]);
 
-                    $needle = $matches[0][$index];
+            $promises = (function () use ($esiRequests) {
+                /** @var EsiRequest $esiRequest */
+                foreach ($esiRequests as $esiRequest) {
+                    yield $this->client->requestAsync(
+                        'GET',
+                        $esiRequest->getSrc(),
+                        array_merge($this->requestOptions(), $esiRequest->requestOptions())
+                    );
+                }
+            })();
+
+            $promise = new EachPromise($promises, [
+                'concurrency' => $this->options['concurrency'],
+                'fulfilled' => function (Response $response, int $index) use (&$data, $esiRequests) {
+
+                    $needle = $esiRequests[$index]->getEsiTag();
                     $pos = strpos($data, $needle);
                     if ($pos !== false) {
                         $data = substr_replace($data, $response->getBody()->getContents(), $pos, strlen($needle));
@@ -63,16 +75,18 @@ class Mantle implements LoggerAwareInterface
                         $this->logger->error('This should not happen. Could not replace previously found esi tag.');
                     }
                 },
-                'rejected' => function (\Exception $reason, int $index) use (&$data, $matches) {
+                'rejected' => function (\Exception $reason, int $index) use (&$data, $esiRequests) {
 
                     $this->logger->error(
-                        'Could not fetch ['.$matches['src'][$index].']. Reason: '.$reason->getMessage()
+                        'Could not fetch ['.$esiRequests[$index]->getSrc().']. Reason: '.$reason->getMessage()
                     );
 
-                    $data = str_replace($matches[$index], '', $data);
+                    $data = str_replace($esiRequests[$index]->getEsiTag(), '', $data);
                 },
             ]);
-            $pool->promise()->wait();
+
+            $promise->promise()->wait();
+
         } else {
             $this->logger->info('No esi tags found');
         }
@@ -83,19 +97,18 @@ class Mantle implements LoggerAwareInterface
     private function defaultOptions(): array
     {
         return [
-            'guzzle' => [
-                'concurrency' => 5
-            ]
+            'concurrency' => 5,
+            'timeout' => 1.0,
         ];
     }
 
-    private function makeRequests() {
-        return function (array $matches) {
-            foreach ($matches as $match) {
-                $esiParser = new EsiParser($match);
-                yield new Request('GET', $esiParser->getSrc());
-            }
-        };
+    private function makeEsiRequests(array $esiTags) : array
+    {
+        $ret = [];
+        foreach ($esiTags as $esiTag) {
+             $ret[] = new EsiRequest($esiTag);
+        }
+        return $ret;
     }
 
     /**
@@ -114,5 +127,12 @@ class Mantle implements LoggerAwareInterface
     public function getOptions(): array
     {
         return $this->options;
+    }
+
+    private function requestOptions() : array
+    {
+        return [
+            'connect_timeout' => $this->options['timeout']
+        ];
     }
 }
