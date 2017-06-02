@@ -10,6 +10,7 @@ wait for Octophpus 0.5.**
 ## Requirements 
 * PHP 7.1
 * Guzzle 6 
+* cURL extension for PHP. _Octopus will run without cURL, but multiple request will not work_
 
 ## Installation
 

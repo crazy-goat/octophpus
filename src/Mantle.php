@@ -2,6 +2,7 @@
 
 namespace CrazyGoat\Octophpus;
 
+use CrazyGoat\Octophpus\Validator\OptionsValidator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise\EachPromise;
 use GuzzleHttp\Psr7\Response;
@@ -24,18 +25,15 @@ class Mantle implements LoggerAwareInterface
     private $cachePool = null;
 
     /**
-     * @var Client
-     */
-    private $client;
-
-    /**
      * Mantle constructor.
      * @param array $options
      */
     public function __construct(array $options = [])
     {
+        $validator = new OptionsValidator($options);
+        $validator->validate();
+
         $this->options = array_merge($this->defaultOptions(), $options);
-        $this->client = new Client([]);
         $this->logger = new VoidLogger();
     }
 
@@ -49,43 +47,20 @@ class Mantle implements LoggerAwareInterface
     {
         if (preg_match_all('/<esi:include [^>]*\\/>/ims', $data, $matches)) {
 
+            /** @var Client $client */
+            $client = new Client($this->clientOptions());
+
             /** @var EsiRequest[] $esiRequests */
             $esiRequests = $this->makeEsiRequests($matches[0]);
 
-            $promises = (function () use ($esiRequests) {
-                /** @var EsiRequest $esiRequest */
-                foreach ($esiRequests as $esiRequest) {
-                    yield $this->client->requestAsync(
-                        'GET',
-                        $esiRequest->getSrc(),
-                        array_merge($this->requestOptions(), $esiRequest->requestOptions())
-                    );
-                }
-            })();
-
-            $promise = new EachPromise($promises, [
-                'concurrency' => $this->options['concurrency'],
-                'fulfilled' => function (Response $response, int $index) use (&$data, $esiRequests) {
-
-                    $needle = $esiRequests[$index]->getEsiTag();
-                    $pos = strpos($data, $needle);
-                    if ($pos !== false) {
-                        $data = substr_replace($data, $response->getBody()->getContents(), $pos, strlen($needle));
-                    } else {
-                        $this->logger->error('This should not happen. Could not replace previously found esi tag.');
-                    }
-                },
-                'rejected' => function (\Exception $reason, int $index) use (&$data, $esiRequests) {
-
-                    $this->logger->error(
-                        'Could not fetch ['.$esiRequests[$index]->getSrc().']. Reason: '.$reason->getMessage()
-                    );
-
-                    $data = str_replace($esiRequests[$index]->getEsiTag(), '', $data);
-                },
-            ]);
-
-            $promise->promise()->wait();
+            (new EachPromise(
+                $this->createRequestPromises()($client, $esiRequests),
+                [
+                    'concurrency' => $this->options['concurrency'],
+                    'fulfilled' => $this->handleFulfilled($data, $esiRequests),
+                    'rejected' => $this->handleRejected($data, $esiRequests)
+                ]
+            ))->promise()->wait();
 
         } else {
             $this->logger->info('No esi tags found');
@@ -94,11 +69,48 @@ class Mantle implements LoggerAwareInterface
         return $data;
     }
 
+    private function handleFulfilled(string &$data, array $esiRequests)
+    {
+        return (function (Response $response, int $index) use (&$data, $esiRequests)
+        {
+            $needle = $esiRequests[$index]->getEsiTag();
+            $pos = strpos($data, $needle);
+            if ($pos !== false) {
+                $data = substr_replace($data, $response->getBody()->getContents(), $pos, strlen($needle));
+            } else {
+                $this->logger->error('This should not happen. Could not replace previously found esi tag.');
+            }
+        });
+    }
+
+    private function handleRejected(string &$data, array $esiRequests) {
+        return (function (\Exception $reason, int $index) use (&$data, $esiRequests) {
+            $this->logger->error(
+                'Could not fetch ['.$esiRequests[$index]->getSrc().']. Reason: '.$reason->getMessage()
+            );
+            $data = str_replace($esiRequests[$index]->getEsiTag(), '', $data);
+        });
+    }
+
+    private function createRequestPromises()
+    {
+        return (function (Client $client, array $esiRequests) {
+            /** @var EsiRequest $esiRequest */
+            foreach ($esiRequests as $esiRequest) {
+                yield $client->requestAsync(
+                    'GET',
+                    $esiRequest->getSrc(),
+                    array_merge($this->requestOptions(), $esiRequest->requestOptions())
+                );
+            }
+        });
+    }
+
     private function defaultOptions(): array
     {
         return [
             'concurrency' => 5,
-            'timeout' => 1.0,
+            'timeout' => 2.0,
         ];
     }
 
@@ -117,6 +129,9 @@ class Mantle implements LoggerAwareInterface
      */
     public function setOptions(array $options): Mantle
     {
+        $validator = new OptionsValidator($options);
+        $validator->validate();
+
         $this->options = $options;
         return $this;
     }
@@ -131,8 +146,14 @@ class Mantle implements LoggerAwareInterface
 
     private function requestOptions() : array
     {
+        return [];
+    }
+
+    private function clientOptions() : array
+    {
         return [
-            'connect_timeout' => $this->options['timeout']
+            'concurrency' => $this->options['concurrency'],
+            'timeout' => $this->options['timeout']
         ];
     }
 }
