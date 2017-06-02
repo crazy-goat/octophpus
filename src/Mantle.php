@@ -34,7 +34,7 @@ class Mantle implements LoggerAwareInterface
         $validator->validate();
 
         $this->options = array_merge($this->defaultOptions(), $options);
-        $this->logger = new VoidLogger();
+        $this->logger = (isset($options['logger'])) ? $options['logger'] : new VoidLogger();
     }
 
     public function setCache(?CacheItemPoolInterface $cachePool) : Mantle
