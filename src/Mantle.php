@@ -48,16 +48,15 @@ class Mantle implements LoggerAwareInterface
 
     public function decorate(string $data): string
     {
-        if (preg_match_all('/<esi:include [^>]*\\/>/ims', $data, $matches)) {
+        $parser = new EsiParser();
 
-            /** @var Client $client */
-            $client = new Client($this->clientOptions());
+        if ($parser->parse($data)) {
 
             /** @var EsiRequest[] $esiRequests */
-            $esiRequests = $this->makeEsiRequests($matches[0]);
+            $esiRequests = $parser->esiRequests();
 
             (new EachPromise(
-                $this->createRequestPromises()($client, $esiRequests),
+                $this->createRequestPromises()($esiRequests),
                 [
                     'concurrency' => $this->options['concurrency'],
                     'fulfilled' => $this->handleFulfilled($data, $esiRequests),
@@ -66,7 +65,7 @@ class Mantle implements LoggerAwareInterface
             ))->promise()->wait();
 
         } else {
-            $this->logger->info('No esi tags found');
+            $this->logger->info('No esi:include tag found');
         }
 
         return $data;
@@ -88,7 +87,7 @@ class Mantle implements LoggerAwareInterface
 
     private function handleRejected(string &$data, array $esiRequests) {
         if ($this->options['on_reject'] instanceof \Closure) {
-            return $this->options['on_reject'];
+            return $this->options['on_reject']($data, $esiRequests);
         }
 
         return (function (\Exception $reason, int $index) use (&$data, $esiRequests) {
@@ -107,7 +106,8 @@ class Mantle implements LoggerAwareInterface
 
     private function createRequestPromises()
     {
-        return (function (Client $client, array $esiRequests) {
+        return (function (array $esiRequests) {
+            $client = new Client($this->clientOptions());
             /** @var EsiRequest $esiRequest */
             foreach ($esiRequests as $esiRequest) {
                 yield $client->requestAsync(
@@ -127,15 +127,6 @@ class Mantle implements LoggerAwareInterface
             'on_reject' => static::ON_REJECT_EXCEPTION,
             'base_uri' => ''
         ];
-    }
-
-    private function makeEsiRequests(array $esiTags) : array
-    {
-        $ret = [];
-        foreach ($esiTags as $esiTag) {
-             $ret[] = new EsiRequest($esiTag);
-        }
-        return $ret;
     }
 
     /**
