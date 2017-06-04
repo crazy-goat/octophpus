@@ -74,9 +74,7 @@ to more lines:
 List of features to be add in the near feature. _This list is not ordered._
 
 * New features
-    * Add option to throw exception when one of the request fails,
     * Add caching - use PSR-7 cache interface
-    * Add default url `protocol` and `domain` to handle relative `src`
     * Add [hxInclude](http://mnot.github.io/hinclude/) option on timeout
     * Add option to pass headers to requests (for example cookies, x-forwared-proto)
     * Add recurrence ESI requests
