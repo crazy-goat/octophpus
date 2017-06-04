@@ -1,7 +1,7 @@
 <?php
 include_once "../vendor/autoload.php";
 
-$text = '<esi:include src="http://crazy-goat.com/"/>';
+$text = '<esi:include src="http://crazy-goat.com/octophpus/test"/>';
 
-$octophpus = new \CrazyGoat\Octophpus\Mantle();
-echo $octophpus->decorate($text);
+$mantle = new \CrazyGoat\Octophpus\Mantle();
+echo $mantle->decorate($text);

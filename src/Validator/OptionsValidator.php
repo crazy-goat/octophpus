@@ -3,6 +3,7 @@
 namespace CrazyGoat\Octophpus\Validator;
 
 use CrazyGoat\Octophpus\Exception\InvalidOptionValueException;
+use CrazyGoat\Octophpus\Mantle;
 use Psr\Log\LoggerInterface;
 
 class OptionsValidator implements ValidatorInterface
@@ -30,6 +31,29 @@ class OptionsValidator implements ValidatorInterface
 
         if (array_key_exists('logger', $this->config) && !($this->config['logger'] instanceof LoggerInterface)) {
             throw new InvalidOptionValueException('Logger must be instance of LoggerInterface');
+        }
+
+        if (array_key_exists('base_uri', $this->config) && !is_string($this->config['base_uri'])) {
+            throw new InvalidOptionValueException('Base URI option must be a string');
+        }
+
+        if (array_key_exists('on_reject', $this->config)) {
+            if (is_string($this->config['on_reject']) && !in_array($this->config['on_reject'], [
+                    Mantle::ON_REJECT_EXCEPTION,
+                    Mantle::ON_REJECT_EMPTY
+                ])) {
+                throw new InvalidOptionValueException(
+                    'Invalid on_reject option, valid values: '.
+                    Mantle::ON_REJECT_EXCEPTION.', '.Mantle::ON_REJECT_EMPTY.' or Closure'
+                );
+            } else {
+                if (!is_string($this->config['on_reject']) && !($this->config['on_reject'] instanceof \Closure)) {
+                    throw new InvalidOptionValueException(
+                        'Invalid on_reject option, expected Closure got: '.gettype($this->config['on_reject'])
+                    );
+                }
+            }
+
         }
 
         return true;

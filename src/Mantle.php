@@ -12,6 +12,9 @@ use Psr\Log\LoggerAwareTrait;
 
 class Mantle implements LoggerAwareInterface
 {
+    const ON_REJECT_EMPTY = 'empty';
+    const ON_REJECT_EXCEPTION = 'exception';
+
     use LoggerAwareTrait;
 
     /**
@@ -84,11 +87,21 @@ class Mantle implements LoggerAwareInterface
     }
 
     private function handleRejected(string &$data, array $esiRequests) {
+        if ($this->options['on_reject'] instanceof \Closure) {
+            return $this->options['on_reject'];
+        }
+
         return (function (\Exception $reason, int $index) use (&$data, $esiRequests) {
+
             $this->logger->error(
                 'Could not fetch ['.$esiRequests[$index]->getSrc().']. Reason: '.$reason->getMessage()
             );
-            $data = str_replace($esiRequests[$index]->getEsiTag(), '', $data);
+
+            if ($this->options['on_reject'] == static::ON_REJECT_EMPTY) {
+                $data = str_replace($esiRequests[$index]->getEsiTag(), '', $data);
+            } else {
+                throw $reason;
+            }
         });
     }
 
@@ -111,6 +124,8 @@ class Mantle implements LoggerAwareInterface
         return [
             'concurrency' => 5,
             'timeout' => 2.0,
+            'on_reject' => static::ON_REJECT_EXCEPTION,
+            'base_uri' => ''
         ];
     }
 
@@ -153,7 +168,8 @@ class Mantle implements LoggerAwareInterface
     {
         return [
             'concurrency' => $this->options['concurrency'],
-            'timeout' => $this->options['timeout']
+            'timeout' => $this->options['timeout'],
+            'base_uri' => $this->options['base_uri']
         ];
     }
 }
