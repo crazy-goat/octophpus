@@ -1,3 +1,5 @@
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/crazy-goat/octophpus/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/crazy-goat/octophpus/?branch=master)
+
 # Octophpus
 Asynchronous ESI filter for PHP 7.1+. Its scans string for `esi:include` tags 
 and replace with remote content. It's a simple replace for varnish server just for 
