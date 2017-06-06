@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "8674327869025cff4e0fce03479d283e",
-    "content-hash": "77105cad8b7eb01769e485101b3bbbe4",
+    "hash": "69d4b74ccec3afa99296945cabd0ce9a",
+    "content-hash": "c0cfe47cacf4aa5fc8ac6d7a01a60c20",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -1739,6 +1739,66 @@
                 "standards"
             ],
             "time": "2017-05-04 00:33:04"
+        },
+        {
+            "name": "tedivm/stash",
+            "version": "v0.14.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tedious/Stash.git",
+                "reference": "7ea9749784152dcd2dab72c4bbf2bef18c326e41"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tedious/Stash/zipball/7ea9749784152dcd2dab72c4bbf2bef18c326e41",
+                "reference": "7ea9749784152dcd2dab72c4bbf2bef18c326e41",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.4|^7.0",
+                "psr/cache": "~1.0"
+            },
+            "provide": {
+                "psr/cache-implementation": "1.0.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^1.9",
+                "phpunit/phpunit": "4.8.*",
+                "satooshi/php-coveralls": "1.0.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Stash\\": "src/Stash/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Robert Hafner",
+                    "email": "tedivm@tedivm.com"
+                },
+                {
+                    "name": "Josh Hall-Bachner",
+                    "email": "charlequin@gmail.com"
+                }
+            ],
+            "description": "The place to keep your cache.",
+            "homepage": "http://github.com/tedious/Stash",
+            "keywords": [
+                "apc",
+                "cache",
+                "caching",
+                "memcached",
+                "psr-6",
+                "psr6",
+                "redis",
+                "sessions"
+            ],
+            "time": "2017-04-23 17:16:57"
         },
         {
             "name": "theseer/tokenizer",

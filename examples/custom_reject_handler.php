@@ -14,8 +14,8 @@ $reject_closure = function (string &$data, array $esiRequests) {
     });
 };
 
-$mantle = new \CrazyGoat\Octophpus\Mantle(
+$esiInclude = new \CrazyGoat\Octophpus\EsiTentacles(
     ['on_reject' => $reject_closure]
 );
 
-echo $mantle->decorate($text);
+echo $esiInclude->decorate($text);

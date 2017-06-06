@@ -22,6 +22,10 @@ class EsiRequest
      */
     private $timeout = null;
 
+    /**
+     * @var bool
+     */
+    private $noCache = false;
 
     public function __construct(string $esiTag)
     {
@@ -46,6 +50,8 @@ class EsiRequest
 
         $this->src = $parsedTag['attributes']['SRC'];
         $this->timeout = isset($parsedTag['attributes']['TIMEOUT']) ? (float)$parsedTag['attributes']['TIMEOUT'] : null;
+        $this->noCache = isset($parsedTag['attributes']['NOCACHE']);
+
     }
 
     private function getTag(array $tags) : array
@@ -92,5 +98,13 @@ class EsiRequest
         }
 
         return $options;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isNoCache(): bool
+    {
+        return $this->noCache;
     }
 }

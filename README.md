@@ -35,7 +35,7 @@ include_once "../vendor/autoload.php";
 
 $text = '<esi:include src="http://crazy-goat.com/"/>';
 
-$octophpus = new \CrazyGoat\Octophpus\Mantle();
+$octophpus = new \CrazyGoat\Octophpus\EsiTentacles();
 echo $octophpus->decorate($text);
 ```
 
