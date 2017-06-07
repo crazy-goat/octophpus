@@ -40,7 +40,7 @@ class EsiRequest
         xml_parser_free($p);
 
         if ($parseStatus == 0) {
-            throw new EsiTagParseException("Unable to parse xml: ".$esiTag);
+            throw new EsiTagParseException('Unable to parse xml: '.$esiTag);
         }
 
         $parsedTag = $this->getTag($values);
@@ -57,17 +57,17 @@ class EsiRequest
     private function getTag(array $tags) : array
     {
         if (!is_array($tags) || !isset($tags[0])) {
-            throw new EsiTagParseException("No valid html tags found");
+            throw new EsiTagParseException('No valid html tags found');
         }
 
         $tag = $tags[0];
 
         if ($tag['tag'] !== 'ESI:INCLUDE') {
-            throw new EsiTagParseException("No valid html tags found");
+            throw new EsiTagParseException('No valid html tags found');
         }
 
         if (!isset($tag['attributes']['SRC'])) {
-            throw new EsiTagParseException("Esi tag does not have required parameter src");
+            throw new EsiTagParseException('Esi tag does not have required parameter src');
         }
 
         return $tag;

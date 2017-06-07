@@ -1,5 +1,5 @@
 <?php
-include_once "../vendor/autoload.php";
+include_once '../vendor/autoload.php';
 
 $text = '<esi:include src="http://crazy-goat.com/octophpus/test/error_404"/>';
 /**
@@ -9,8 +9,8 @@ $text = '<esi:include src="http://crazy-goat.com/octophpus/test/error_404"/>';
  */
 $reject_closure = function (string &$data, array $esiRequests) {
     return (function (\Exception $reason, int $index) use (&$data, $esiRequests) {
-        echo "Unable to fetch request (".$esiRequests[$index]->getSrc().") reason : ".$reason->getMessage();
-        $reason;
+        echo 'Unable to fetch request ('.$esiRequests[$index]->getSrc().') reason : '.$reason->getMessage();
+        throw $reason;
     });
 };
 
