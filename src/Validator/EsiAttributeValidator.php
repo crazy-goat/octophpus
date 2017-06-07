@@ -23,7 +23,7 @@ class EsiAttributeValidator implements ValidatorInterface
         }
 
         if (isset($this->attributes['TIMEOUT'])) {
-            if ((float)$this->attributes['TIMEOUT'] <=0 ) {
+            if ((float)$this->attributes['TIMEOUT']<=0) {
                 throw new EsiTagParseException('Timeout must be greater then 0.');
             }
         }

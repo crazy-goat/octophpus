@@ -12,8 +12,8 @@ $esiInclude = new \CrazyGoat\Octophpus\EsiTentacles([
 
 $start = time();
 $esiInclude->decorate($text);
-echo 'first request took '.(time()-$start).' seconds'.PHP_EOL;
+echo 'first request took '.(time() - $start).' seconds'.PHP_EOL;
 
 $start = time();
 $esiInclude->decorate($text);
-echo 'second request took '.(time()-$start).' seconds'.PHP_EOL;
+echo 'second request took '.(time() - $start).' seconds'.PHP_EOL;
