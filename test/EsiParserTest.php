@@ -7,7 +7,6 @@ use PHPUnit\Framework\TestCase;
 
 class EsiParserTest extends TestCase
 {
-
     public function testEsiInclude()
     {
         $esiParser = new EsiParser();
