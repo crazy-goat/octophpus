@@ -29,7 +29,8 @@
   },
   "autoload": {
     "psr-4": {
-      "CrazyGoat\\Octophpus\\": "src/"
+      "CrazyGoat\\Octophpus\\": "src/",
+      "CrazyGoat\\Octophpus\\Test\\": "test/"
     }
   }
 }
