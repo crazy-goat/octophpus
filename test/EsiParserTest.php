@@ -1,8 +1,7 @@
 <?php
 
-namespace CrazyGoat\Octophpus\Test;
+namespace CrazyGoat\Octophpus;
 
-use CrazyGoat\Octophpus\EsiParser;
 use PHPUnit\Framework\TestCase;
 
 class EsiParserTest extends TestCase
