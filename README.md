@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/crazy-goat/octophpus.svg?branch=master)](https://travis-ci.org/crazy-goat/octophpus)
+[![Coverage Status](https://coveralls.io/repos/github/crazy-goat/octophpus/badge.svg?branch=master)](https://coveralls.io/github/crazy-goat/octophpus?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/crazy-goat/octophpus/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/crazy-goat/octophpus/?branch=master)
 
 # Octophpus
