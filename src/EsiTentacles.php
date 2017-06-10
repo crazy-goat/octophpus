@@ -47,22 +47,23 @@ class EsiTentacles
     {
         $parser = new EsiParser();
 
-        if ($parser->parse($data)) {
+        $recurrency = $this->options['recurecny_lever'];
+
+        while ($parser->parse($data) && $recurrency > 0) {
 
             /** @var EsiRequest[] $esiRequests */
             $esiRequests = $parser->esiRequests();
 
-            (new EachPromise(
+            $work = (new EachPromise(
                 $this->createRequestPromises()($esiRequests),
                 [
                     'concurrency' => $this->options['concurrency'],
                     'fulfilled' => $this->options['fulfilled']($data, $esiRequests),
                     'rejected' =>  $this->options['rejected']($data, $esiRequests)
                 ]
-            ))->promise()->wait();
-
-        } else {
-            $this->logger->info('No esi:include tag found');
+            ));
+            $work->promise()->wait();
+            $recurrency--;
         }
 
         return $data;
@@ -104,6 +105,7 @@ class EsiTentacles
             'cache_prefix' => 'esi:include',
             'cache_ttl' => 3600,
             'request_options' => [],
+            'recurecny_lever' => 1,
             'fulfilled' => function (string &$data, array $esiRequests)
             {
                 return (function (Response $response, int $index) use (&$data, $esiRequests)
