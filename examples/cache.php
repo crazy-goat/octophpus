@@ -4,7 +4,7 @@ include_once '../vendor/autoload.php';
 $text = '<esi:include src="http://crazy-goat.com/octophpus/test/sleep5.php"/>';
 
 $esiInclude = new \CrazyGoat\Octophpus\EsiTentacles([
-    'cachePool' => new \Stash\Pool(
+    'cache_pool' => new \Stash\Pool(
         new \Stash\Driver\Ephemeral()
     ),
     'timeout' => 10.0

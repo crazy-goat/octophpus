@@ -4,6 +4,7 @@ namespace CrazyGoat\Octophpus;
 
 use CrazyGoat\Octophpus\Validator\OptionsValidator;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Promise\EachPromise;
 use GuzzleHttp\Psr7\Response;
 use Psr\Cache\CacheItemPoolInterface;
@@ -13,6 +14,8 @@ class EsiTentacles
 {
     const ON_REJECT_EMPTY = 'empty';
     const ON_REJECT_EXCEPTION = 'exception';
+    const ON_TIMEOUT_H_INCLUDE = 'hinclude';
+    const ON_TIMEOUT_EXCEPTION = 'exception';
 
     /**
      * @var array options
@@ -39,8 +42,8 @@ class EsiTentacles
         $validator->validate();
 
         $this->options = array_merge($this->defaultOptions(), $options);
-        $this->logger = (isset($options['logger'])) ? $options['logger'] : new VoidLogger();
-        $this->cachePool = (isset($options['cachePool'])) ? $options['cachePool'] : null;
+        $this->logger = $this->options ['logger'];
+        $this->cachePool = $this->options ['cache_pool'];
     }
 
     public function decorate(string $data): string
@@ -101,11 +104,14 @@ class EsiTentacles
             'concurrency' => 5,
             'timeout' => 2.0,
             'on_reject' => static::ON_REJECT_EXCEPTION,
+            'on_timeout' => static::ON_TIMEOUT_EXCEPTION,
             'base_uri' => '',
             'cache_prefix' => 'esi:include',
             'cache_ttl' => 3600,
             'request_options' => [],
             'recurecny_lever' => 1,
+            'cache_poo;' => null,
+            'logger' => new VoidLogger(),
             'fulfilled' => function (string &$data, array $esiRequests)
             {
                 return (function (Response $response, int $index) use (&$data, $esiRequests)
@@ -135,13 +141,25 @@ class EsiTentacles
             },
             'rejected' => function (string &$data, array $esiRequests) {
                 return (function (\Exception $reason, int $index) use (&$data, $esiRequests) {
+                    /** @var EsiRequest $esiRequest */
+                    $esiRequest = $esiRequests[$index];
 
                     $this->logger->error(
-                        'Could not fetch ['.$esiRequests[$index]->getSrc().']. Reason: '.$reason->getMessage()
+                        'Could not fetch ['.$esiRequest->getSrc().']. Reason: '.$reason->getMessage()
                     );
+                    if ($reason instanceof ConnectException && (
+                        $this->options['on_timeout'] == static::ON_TIMEOUT_H_INCLUDE
+                        )) {
+                        $data = str_replace(
+                            $esiRequest->getEsiTag(),
+                            '<hx:include src="'.$this->options['base_uri'].$esiRequest->getSrc().'"></hx:include>',
+                            $data
+                        );
+                        return;
+                    }
 
                     if ($this->options['on_reject'] == static::ON_REJECT_EMPTY) {
-                        $data = str_replace($esiRequests[$index]->getEsiTag(), '', $data);
+                        $data = str_replace($esiRequest->getEsiTag(), '', $data);
                     } else {
                         throw $reason;
                     }
