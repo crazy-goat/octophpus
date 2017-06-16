@@ -156,9 +156,8 @@ class EsiTentacles
                 $this->logger->error(
                     'Could not fetch [' . $esiRequest->getSrc() . ']. Reason: ' . $reason->getMessage()
                 );
-                if ($reason instanceof ConnectException && (
-                        $this->options['on_timeout'] == static::ON_TIMEOUT_H_INCLUDE
-                    )
+                if ($reason instanceof ConnectException &&
+                    $this->options['on_timeout'] == static::ON_TIMEOUT_H_INCLUDE
                 ) {
                     $data = str_replace(
                         $esiRequest->getEsiTag(),
