@@ -42,8 +42,8 @@ class EsiTentacles
         $validator->validate();
 
         $this->options = array_merge($this->defaultOptions(), $options);
-        $this->logger = $this->options ['logger'];
-        $this->cachePool = $this->options ['cache_pool'];
+        $this->logger = $this->options['logger'];
+        $this->cachePool = $this->options['cache_pool'];
     }
 
     public function decorate(string $data): string
@@ -62,7 +62,7 @@ class EsiTentacles
                 [
                     'concurrency' => $this->options['concurrency'],
                     'fulfilled' => $this->options['fulfilled']($data, $esiRequests),
-                    'rejected' =>  $this->options['rejected']($data, $esiRequests)
+                    'rejected' => $this->options['rejected']($data, $esiRequests)
                 ]
             ));
             $work->promise()->wait();
@@ -72,14 +72,14 @@ class EsiTentacles
         return $data;
     }
 
-    private function createRequestPromises()
+    private function createRequestPromises(): \Closure
     {
         return (function (array $esiRequests) {
             $client = new Client($this->clientOptions());
             /** @var EsiRequest $esiRequest */
             foreach ($esiRequests as $esiRequest) {
 
-                $cacheKey = $this->options['cache_prefix'].':'.base64_encode($esiRequest->getSrc());
+                $cacheKey = $this->options['cache_prefix'] . ':' . base64_encode($esiRequest->getSrc());
 
                 if ($this->cachePool instanceof CacheItemPoolInterface &&
                     $this->cachePool->hasItem($cacheKey)
@@ -110,62 +110,71 @@ class EsiTentacles
             'cache_ttl' => 3600,
             'request_options' => [],
             'recurecny_lever' => 1,
-            'cache_poo;' => null,
+            'cache_pool' => null,
             'logger' => new VoidLogger(),
-            'fulfilled' => function (string &$data, array $esiRequests)
-            {
-                return (function (Response $response, int $index) use (&$data, $esiRequests)
-                {
-                    /** @var EsiRequest $esiRequest */
-                    $esiRequest = $esiRequests[$index];
-                    $needle = $esiRequest->getEsiTag();
-                    $pos = strpos($data, $needle);
-                    if ($pos !== false) {
-
-                        if ($this->cachePool instanceof CacheItemPoolInterface && !$esiRequest->isNoCache()) {
-                            $cacheKey = $this->options['cache_prefix'].':'.base64_encode($esiRequest->getSrc());
-
-                            $this->cachePool->save(
-                                $this->cachePool
-                                    ->getItem($cacheKey)
-                                    ->set($response->getBody()->getContents())
-                                    ->expiresAfter($this->options['cache_ttl'])
-                            );
-                        }
-
-                        $data = substr_replace($data, $response->getBody()->getContents(), $pos, strlen($needle));
-                    } else {
-                        $this->logger->error('This should not happen. Could not replace previously found esi tag.');
-                    }
-                });
-            },
-            'rejected' => function (string &$data, array $esiRequests) {
-                return (function (\Exception $reason, int $index) use (&$data, $esiRequests) {
-                    /** @var EsiRequest $esiRequest */
-                    $esiRequest = $esiRequests[$index];
-
-                    $this->logger->error(
-                        'Could not fetch ['.$esiRequest->getSrc().']. Reason: '.$reason->getMessage()
-                    );
-                    if ($reason instanceof ConnectException && (
-                        $this->options['on_timeout'] == static::ON_TIMEOUT_H_INCLUDE
-                        )) {
-                        $data = str_replace(
-                            $esiRequest->getEsiTag(),
-                            '<hx:include src="'.$this->options['base_uri'].$esiRequest->getSrc().'"></hx:include>',
-                            $data
-                        );
-                        return;
-                    }
-
-                    if ($this->options['on_reject'] == static::ON_REJECT_EMPTY) {
-                        $data = str_replace($esiRequest->getEsiTag(), '', $data);
-                    } else {
-                        throw $reason;
-                    }
-                });
-            }
+            'fulfilled' => $this->defaultFulfilled(),
+            'rejected' => $this->defaultReject()
         ];
+    }
+
+    private function defaultFulfilled(): \Closure
+    {
+        return function (string &$data, array $esiRequests) {
+            return (function (Response $response, int $index) use (&$data, $esiRequests) {
+                /** @var EsiRequest $esiRequest */
+                $esiRequest = $esiRequests[$index];
+                $needle = $esiRequest->getEsiTag();
+                $pos = strpos($data, $needle);
+                if ($pos !== false) {
+
+                    if ($this->cachePool instanceof CacheItemPoolInterface && !$esiRequest->isNoCache()) {
+                        $cacheKey = $this->options['cache_prefix'] . ':' . base64_encode($esiRequest->getSrc());
+
+                        $this->cachePool->save(
+                            $this->cachePool
+                                ->getItem($cacheKey)
+                                ->set($response->getBody()->getContents())
+                                ->expiresAfter($this->options['cache_ttl'])
+                        );
+                    }
+
+                    $data = substr_replace($data, $response->getBody()->getContents(), $pos, strlen($needle));
+                } else {
+                    $this->logger->error('This should not happen. Could not replace previously found esi tag.');
+                }
+            });
+        };
+    }
+
+    private function defaultReject(): \Closure
+    {
+        return function (string &$data, array $esiRequests) {
+            return (function (\Exception $reason, int $index) use (&$data, $esiRequests) {
+                /** @var EsiRequest $esiRequest */
+                $esiRequest = $esiRequests[$index];
+
+                $this->logger->error(
+                    'Could not fetch [' . $esiRequest->getSrc() . ']. Reason: ' . $reason->getMessage()
+                );
+                if ($reason instanceof ConnectException && (
+                        $this->options['on_timeout'] == static::ON_TIMEOUT_H_INCLUDE
+                    )
+                ) {
+                    $data = str_replace(
+                        $esiRequest->getEsiTag(),
+                        '<hx:include src="' . $this->options['base_uri'] . $esiRequest->getSrc() . '"></hx:include>',
+                        $data
+                    );
+                    return;
+                }
+
+                if ($this->options['on_reject'] == static::ON_REJECT_EMPTY) {
+                    $data = str_replace($esiRequest->getEsiTag(), '', $data);
+                } else {
+                    throw $reason;
+                }
+            });
+        };
     }
 
     /**
@@ -189,7 +198,7 @@ class EsiTentacles
         return $this->options;
     }
 
-    private function clientOptions() : array
+    private function clientOptions(): array
     {
         return [
             'concurrency' => $this->options['concurrency'],
