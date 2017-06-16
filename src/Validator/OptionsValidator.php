@@ -41,25 +41,6 @@ class OptionsValidator implements ValidatorInterface
             }
         }
 
-        if (array_key_exists('on_reject', $this->config)) {
-            if (is_string($this->config['on_reject']) && !in_array($this->config['on_reject'], [
-                    EsiTentacles::ON_REJECT_EXCEPTION,
-                    EsiTentacles::ON_REJECT_EMPTY
-                ])) {
-                throw new InvalidOptionValueException(
-                    'Invalid on_reject option, valid values: '.
-                    EsiTentacles::ON_REJECT_EXCEPTION.', '.EsiTentacles::ON_REJECT_EMPTY.' or Closure'
-                );
-            } else {
-                if (!is_string($this->config['on_reject']) && !($this->config['on_reject'] instanceof \Closure)) {
-                    throw new InvalidOptionValueException(
-                        'Invalid on_reject option, expected Closure got: '.gettype($this->config['on_reject'])
-                    );
-                }
-            }
-
-        }
-
         return true;
     }
 
