@@ -126,24 +126,28 @@ class EsiTentacles
                 $needle = $esiRequest->getEsiTag();
                 $pos = strpos($data, $needle);
                 if ($pos !== false) {
-
-                    if ($this->cachePool instanceof CacheItemPoolInterface && !$esiRequest->isNoCache()) {
-                        $cacheKey = $this->options['cache_prefix'] . ':' . base64_encode($esiRequest->getSrc());
-
-                        $this->cachePool->save(
-                            $this->cachePool
-                                ->getItem($cacheKey)
-                                ->set($response->getBody()->getContents())
-                                ->expiresAfter($this->options['cache_ttl'])
-                        );
-                    }
-
-                    $data = substr_replace($data, $response->getBody()->getContents(), $pos, strlen($needle));
+                    $contents = $response->getBody()->getContents();
+                    $this->setCache($esiRequest, $contents);
+                    $data = substr_replace($data, $contents, $pos, strlen($needle));
                 } else {
                     $this->logger->error('This should not happen. Could not replace previously found esi tag.');
                 }
             });
         };
+    }
+
+    private function setCache(EsiRequest $esiRequest, string $content)
+    {
+        if ($this->cachePool instanceof CacheItemPoolInterface && !$esiRequest->noCache()) {
+            $cacheKey = $this->options['cache_prefix'] . ':' . base64_encode($esiRequest->getSrc());
+
+            $this->cachePool->save(
+                $this->cachePool
+                    ->getItem($cacheKey)
+                    ->set($content)
+                    ->expiresAfter($this->options['cache_ttl'])
+            );
+        }
     }
 
     private function defaultReject(): \Closure

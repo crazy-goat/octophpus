@@ -93,7 +93,7 @@ class EsiRequest
     {
         $options = [];
 
-        if (!empty($this->timeout)) {
+        if (!is_null($this->timeout)) {
             $options['connect_timeout'] = $this->timeout;
         }
 
@@ -103,7 +103,7 @@ class EsiRequest
     /**
      * @return bool
      */
-    public function isNoCache(): bool
+    public function noCache(): bool
     {
         return $this->noCache;
     }

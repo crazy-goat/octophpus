@@ -31,6 +31,8 @@ class OptionsValidator implements ValidatorInterface
      * @uses validateBaseUri
      * @uses validateOnReject
      * @uses validateOnTimeout
+     * @uses validateCachePrefix
+     * @uses validateRequestOptions
      */
     public function validate(): bool
     {
@@ -42,6 +44,16 @@ class OptionsValidator implements ValidatorInterface
         }
 
         return true;
+    }
+
+    private function validateRequestOptions(array $value)
+    {
+        Expect::that($value)->isArray();
+    }
+
+    private function validateCachePrefix(string $value)
+    {
+        Expect::that($value)->isString();
     }
 
     private function validateConcurrency(int $value) : void
