@@ -78,24 +78,24 @@ class EsiTentacles
             $client = new Client($this->clientOptions());
             /** @var EsiRequest $esiRequest */
             foreach ($esiRequests as $esiRequest) {
-
-                $cacheKey = $this->options['cache_prefix'] . ':' . base64_encode($esiRequest->getSrc());
-
-                if ($this->cachePool instanceof CacheItemPoolInterface &&
-                    $this->cachePool->hasItem($cacheKey)
-                ) {
-                    $value = $this->cachePool->getItem($cacheKey)->get();
-                    yield new Response(200, [], $value);
-                    continue;
-                }
-
-                yield $client->requestAsync(
-                    'GET',
-                    $esiRequest->getSrc(),
-                    array_merge($this->options['request_options'], $esiRequest->requestOptions())
-                );
+                yield $this->createSingleRequest($esiRequest, $client);
             }
         });
+    }
+
+    private function createSingleRequest(EsiRequest $esiRequest, Client $client)
+    {
+        $cacheKey = $this->options['cache_prefix'] . ':' . base64_encode($esiRequest->getSrc());
+
+        if ($this->cachePool instanceof CacheItemPoolInterface && $this->cachePool->hasItem($cacheKey)) {
+            yield new Response(200, [], $this->cachePool->getItem($cacheKey)->get());
+        }
+
+        yield $client->requestAsync(
+            'GET',
+            $esiRequest->getSrc(),
+            array_merge($this->options['request_options'], $esiRequest->requestOptions())
+        );
     }
 
     private function defaultOptions(): array
