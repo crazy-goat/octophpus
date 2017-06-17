@@ -4,6 +4,7 @@ namespace CrazyGoat\Octophpus;
 
 use CrazyGoat\Octophpus\Exception\EsiTagParseException;
 use CrazyGoat\Octophpus\Validator\EsiAttributeValidator;
+use Nunzion\Expect;
 
 class EsiRequest
 {
@@ -56,19 +57,13 @@ class EsiRequest
 
     private function getTag(array $tags) : array
     {
-        if (!is_array($tags) || !isset($tags[0])) {
-            throw new EsiTagParseException('No valid html tags found');
-        }
-
+        Expect::that($tags)->itsArrayElement(0);
         $tag = $tags[0];
 
-        if ($tag['tag'] !== 'ESI:INCLUDE') {
-            throw new EsiTagParseException('No valid html tags found');
-        }
-
-        if (!isset($tag['attributes']['SRC'])) {
-            throw new EsiTagParseException('Esi tag does not have required parameter src');
-        }
+        Expect::that($tag)->isArray();
+        Expect::that($tag)->itsArrayElement('tag')->isString()->equals('ESI:INCLUDE');
+        Expect::that($tag)->itsArrayElement('attributes')->isArray();
+        Expect::that($tag['attributes'])->itsArrayElement('SRC')->isString();
 
         return $tag;
     }
