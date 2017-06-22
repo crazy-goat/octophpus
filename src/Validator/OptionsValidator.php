@@ -2,7 +2,6 @@
 
 namespace CrazyGoat\Octophpus\Validator;
 
-use CrazyGoat\Octophpus\Exception\InvalidOptionValueException;
 use CrazyGoat\Octophpus\EsiTentacles;
 use Nunzion\Expect;
 use Psr\Cache\CacheItemPoolInterface;
@@ -23,7 +22,6 @@ class OptionsValidator implements ValidatorInterface
 
     /**
      * @return bool
-     * @throws InvalidOptionValueException
      * @uses validateConcurrency
      * @uses validateTimeout
      * @uses validateCachePool
@@ -51,14 +49,14 @@ class OptionsValidator implements ValidatorInterface
         Expect::that($value)->isArray();
     }
 
-    private function validateCachePrefix(string $value)
+    private function validateCachePrefix(string $value) : void
     {
         Expect::that($value)->isString();
     }
 
     private function validateConcurrency(int $value) : void
     {
-        Expect::that($value)->isInt()->isGreaterThan(1);
+        Expect::that($value)->isInt()->isGreaterThan(0);
     }
 
     private function validateTimeout(float $value) : void
@@ -73,7 +71,7 @@ class OptionsValidator implements ValidatorInterface
 
     private function validateLogger(?LoggerInterface $value) : void
     {
-        Expect::that($value)->isNullOrInstanceOf('sr\Log\LoggerInterface');
+        Expect::that($value)->isNullOrInstanceOf('Psr\Log\LoggerInterface');
     }
 
     private function validateBaseUri(string $value) : void
@@ -83,24 +81,24 @@ class OptionsValidator implements ValidatorInterface
 
     private function validateOnReject($value) : void
     {
-        if (is_string($this->config['on_reject']) && !in_array($this->config['on_reject'], [
+        if ((is_string($this->config['on_reject']) && in_array($this->config['on_reject'], [
                 EsiTentacles::ON_REJECT_EXCEPTION,
                 EsiTentacles::ON_REJECT_EMPTY
-            ])) {
-            throw new InvalidOptionValueException(
-                'Invalid on_reject option, valid values: '.
-                EsiTentacles::ON_REJECT_EXCEPTION.', '.EsiTentacles::ON_REJECT_EMPTY.' or Closure'
-            );
-        } else {
-            Expect::that($value)->isInstanceOf('Closure');
+            ])) || $value instanceof \Closure) {
+            return;
         }
+
+        throw new \InvalidArgumentException(
+            'Invalid on_reject option, valid values: '.
+            EsiTentacles::ON_REJECT_EXCEPTION.', '.EsiTentacles::ON_REJECT_EMPTY.' or Closure'
+        );
     }
 
     private function validateOnTimeout(string $value) : void
     {
         Expect::that($value)->isString()->isNotEmpty();
         if (!in_array($value, [EsiTentacles::ON_TIMEOUT_EXCEPTION, EsiTentacles::ON_TIMEOUT_H_INCLUDE])) {
-            throw new InvalidOptionValueException(
+            throw new \InvalidArgumentException(
                 'Invalid on_reject option, valid values: '.
                 EsiTentacles::ON_TIMEOUT_EXCEPTION.', '.EsiTentacles::ON_TIMEOUT_H_INCLUDE
             );
