@@ -50,9 +50,9 @@ class EsiTentacles
     {
         $parser = new EsiParser();
 
-        $recurrency = $this->options['recurecny_level'];
+        $recurrence = $this->options['recurrence_level'];
 
-        while ($parser->parse($data) && $recurrency > 0) {
+        while ($parser->parse($data) && $recurrence > 0) {
 
             /** @var EsiRequest[] $esiRequests */
             $esiRequests = $parser->esiRequests();
@@ -66,7 +66,7 @@ class EsiTentacles
                 ]
             );
             $work->promise()->wait();
-            $recurrency--;
+            $recurrence--;
         }
 
         return $data;
@@ -109,7 +109,7 @@ class EsiTentacles
             'cache_prefix' => 'esi:include',
             'cache_ttl' => 3600,
             'request_options' => [],
-            'recurecny_level' => 1,
+            'recurrence_level' => 1,
             'cache_pool' => null,
             'logger' => new VoidLogger(),
             'fulfilled' => $this->defaultFulfilled(),

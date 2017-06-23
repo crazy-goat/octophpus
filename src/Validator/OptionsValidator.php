@@ -31,6 +31,10 @@ class OptionsValidator implements ValidatorInterface
      * @uses validateOnTimeout
      * @uses validateCachePrefix
      * @uses validateRequestOptions
+     * @uses validateCacheTtl
+     * @uses validateRecurrenceLevel
+     * @uses validateFulfilled
+     * @uses validateRejected
      */
     public function validate(): bool
     {
@@ -42,6 +46,26 @@ class OptionsValidator implements ValidatorInterface
         }
 
         return true;
+    }
+
+    private function validateCacheTtl(int $value)
+    {
+        Expect::that($value)->isInt()->isGreaterThan(0);
+    }
+
+    private function validateRecurrenceLevel(int $value)
+    {
+        Expect::that($value)->isInt()->isGreaterThan(0);
+    }
+
+    private function validateFulfilled(\Closure $value): void
+    {
+        Expect::that($value)->isInstanceOf(\Closure::class);
+    }
+
+    private function validateRejected(\Closure $value): void
+    {
+        Expect::that($value)->isInstanceOf(\Closure::class);
     }
 
     private function validateRequestOptions(array $value)

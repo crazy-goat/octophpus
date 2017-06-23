@@ -2,6 +2,7 @@
 
 namespace CrazyGoat\Octophpus;
 
+use CrazyGoat\Octophpus\Validator\Camelize;
 use CrazyGoat\Octophpus\Validator\OptionsValidator;
 use PHPUnit\Framework\Error\Error;
 use PHPUnit\Framework\TestCase;
@@ -10,6 +11,8 @@ use Stash\Pool;
 
 class OptionsValidatorTest extends TestCase
 {
+    use Camelize;
+
     /**
      * @expectedException Error
      * @dataProvider invalidDataTypeProvider
@@ -38,6 +41,23 @@ class OptionsValidatorTest extends TestCase
     {
         $validator = new OptionsValidator([$key => $value]);
         $this->assertTrue($validator->validate());
+    }
+
+    public function testDefaultOptions()
+    {
+        $defaultOptions = (new EsiTentacles())->getOptions();
+        $validator = new OptionsValidator($defaultOptions);
+        $this->assertTrue($validator->validate());
+    }
+
+    public function testAllOptionsHasValidator()
+    {
+        $reflection = new \ReflectionClass('CrazyGoat\Octophpus\Validator\OptionsValidator');
+        $options = array_keys((new EsiTentacles())->getOptions());
+        foreach ($options as $key) {
+            $function = 'validate'.$this->camlize($key);
+            $this->assertTrue($reflection->hasMethod($function), 'No validator for key: '.$key);
+        }
     }
 
     public function invalidDataTypeProvider()
@@ -80,6 +100,27 @@ class OptionsValidatorTest extends TestCase
             ['on_timeout', []],
             ['on_timeout', new \stdClass()],
 
+            ['cache_ttl', null],
+            ['cache_ttl', 'string'],
+            ['cache_ttl', []],
+            ['cache_ttl', new \stdClass()],
+
+            ['recurrence_level', null],
+            ['recurrence_level', 'string'],
+            ['recurrence_level', []],
+            ['recurrence_level', new \stdClass()],
+
+            ['fulfilled', null],
+            ['fulfilled', 1],
+            ['fulfilled', 'string'],
+            ['fulfilled', []],
+            ['fulfilled', new \stdClass()],
+
+            ['rejected', null],
+            ['rejected', 1],
+            ['rejected', 'string'],
+            ['rejected', []],
+            ['rejected', new \stdClass()],
         ];
     }
 
@@ -94,6 +135,14 @@ class OptionsValidatorTest extends TestCase
             ['timeout', -1],
             ['timeout', -1000],
 
+            ['cache_ttl', 0],
+            ['cache_ttl', -1],
+            ['cache_ttl', -1000],
+
+            ['recurrence_level', 0],
+            ['recurrence_level', -1],
+            ['recurrence_level', -1000],
+
             ['on_reject', null],
             ['on_reject', []],
             ['on_reject', 1],
@@ -102,7 +151,6 @@ class OptionsValidatorTest extends TestCase
 
             ['on_timeout', ''],
             ['on_timeout', 'string'],
-
         ];
     }
 
@@ -116,6 +164,14 @@ class OptionsValidatorTest extends TestCase
             ['timeout', 1],
             ['timeout', 2],
             ['timeout', 100],
+
+            ['cache_ttl', 1],
+            ['cache_ttl', 2],
+            ['cache_ttl', 100],
+
+            ['recurrence_level', 1],
+            ['recurrence_level', 2],
+            ['recurrence_level', 100],
 
             ['request_options', []],
 
@@ -137,6 +193,9 @@ class OptionsValidatorTest extends TestCase
 
             ['on_timeout', EsiTentacles::ON_TIMEOUT_H_INCLUDE],
             ['on_timeout', EsiTentacles::ON_TIMEOUT_EXCEPTION],
+
+            ['fulfilled', function(){}],
+            ['rejected', function(){}],
         ];
     }
 }
