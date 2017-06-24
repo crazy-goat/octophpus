@@ -2,7 +2,7 @@
 
 namespace CrazyGoat\Octophpus\Validator;
 
-use CrazyGoat\Octophpus\Exception\EsiTagParseException;
+use Nunzion\Expect;
 
 class EsiAttributeValidator implements ValidatorInterface
 {
@@ -18,14 +18,10 @@ class EsiAttributeValidator implements ValidatorInterface
 
     public function validate(): bool
     {
-        if (empty($this->attributes['SRC'])) {
-            throw new EsiTagParseException('Esi tag has empty required parameter src');
-        }
-
+        Expect::that($this->attributes)->itsArrayElement('SRC')->isString()->isNotEmpty();
+        Expect::that($this->attributes)->itsArrayElement('TIMEOUT')->isUndefinedOrFloat();
         if (isset($this->attributes['TIMEOUT'])) {
-            if ((float)$this->attributes['TIMEOUT']<=0) {
-                throw new EsiTagParseException('Timeout must be greater then 0.');
-            }
+            Expect::that($this->attributes)->itsArrayElement('TIMEOUT')->isFloat()->isGreaterThan(0);
         }
 
         return true;
